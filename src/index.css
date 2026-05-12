@@ -1,0 +1,81 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --font-heading: 'Playfair Display', serif;
+    --font-body: 'Inter', sans-serif;
+
+    /* Premium Wine & Gold Theme */
+    --background: 0 20% 7%; /* Deep burgundy-black */
+    --foreground: 40 20% 92%; /* Warm cream white */
+    
+    --card: 0 15% 10%; /* Wine-tinted dark card */
+    --card-foreground: 40 20% 92%;
+    
+    --popover: 0 15% 10%;
+    --popover-foreground: 40 20% 92%;
+    
+    --primary: 355 78% 30%; /* Deep Burgundy / Crimson */
+    --primary-foreground: 0 0% 100%;
+    
+    --secondary: 0 12% 14%; /* Warm dark secondary */
+    --secondary-foreground: 40 20% 92%;
+    
+    --muted: 0 10% 14%;
+    --muted-foreground: 35 8% 55%;
+    
+    --accent: 43 74% 49%; /* Premium Gold */
+    --accent-foreground: 0 0% 10%; /* Dark text on gold */
+    
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+    
+    --border: 0 10% 18%;
+    --input: 0 10% 18%;
+    --ring: 43 74% 49%; /* Gold ring for focus */
+    
+    --chart-1: 355 78% 30%;
+    --chart-2: 43 74% 49%;
+    --chart-3: 120 30% 40%;
+    --chart-4: 200 50% 45%;
+    --chart-5: 280 40% 50%;
+    
+    --radius: 0.5rem;
+    
+    --sidebar-background: 0 18% 8%;
+    --sidebar-foreground: 40 20% 92%;
+    --sidebar-primary: 43 74% 49%;
+    --sidebar-primary-foreground: 0 0% 10%;
+    --sidebar-accent: 0 12% 14%;
+    --sidebar-accent-foreground: 40 20% 92%;
+    --sidebar-border: 0 10% 18%;
+    --sidebar-ring: 43 74% 49%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+    /* Adding a subtle gradient noise or background texture could go here */
+  }
+}
+
+/* Custom Utilities for Premium Vibe */
+@layer utilities {
+  .glass-panel {
+    @apply bg-card/70 backdrop-blur-md border border-white/5 shadow-xl;
+  }
+  .gold-gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728];
+  }
+  .gold-border-hover {
+    @apply transition-colors duration-300 border border-transparent hover:border-accent/50;
+  }
+}

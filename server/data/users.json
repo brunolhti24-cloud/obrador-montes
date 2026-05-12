@@ -1,0 +1,30 @@
+[
+  {
+    "id": "user-admin-001",
+    "name": "Administrador",
+    "email": "brunolh.ti24@ustjr.edu.mx",
+    "password": "0305bruno2",
+    "role": "admin",
+    "created_date": "2026-01-01T00:00:00.000Z"
+  },
+  {
+    "id": "6a7f5d0b-4d6a-4228-aded-de3c1a17778f",
+    "name": "bruno",
+    "email": "brulohopez@gmail.com",
+    "password": "123456789",
+    "role": "customer",
+    "created_by": "brulohopez@gmail.com",
+    "created_date": "2026-05-11T16:55:16.688Z",
+    "updated_date": "2026-05-11T16:55:16.688Z"
+  },
+  {
+    "id": "b1d12383-9339-4228-9e4e-56204d6ef020",
+    "name": "Cliente Prueba",
+    "email": "cliente@test.com",
+    "password": "test1234",
+    "role": "customer",
+    "created_by": "cliente@test.com",
+    "created_date": "2026-05-11T17:01:10.286Z",
+    "updated_date": "2026-05-11T17:01:10.286Z"
+  }
+]

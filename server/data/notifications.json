@@ -1,0 +1,14 @@
+[
+  {
+    "id": "053dfefb-ab3a-491b-b00a-d2d7b4934d5a",
+    "user_email": "brunolh.ti24@ustjr.edu.mx",
+    "title": "🛒 Nuevo pedido",
+    "message": "Nuevo pedido de $259 MXN con 1 producto(s)",
+    "type": "order_status",
+    "order_id": "48c11ef9-72de-4c52-a847-a1cee8c471bd",
+    "read": true,
+    "created_by": "system",
+    "created_date": "2026-05-11T16:57:18.668Z",
+    "updated_date": "2026-05-11T16:58:04.181Z"
+  }
+]

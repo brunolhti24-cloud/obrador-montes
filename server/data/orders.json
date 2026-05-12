@@ -1,0 +1,22 @@
+[
+  {
+    "id": "48c11ef9-72de-4c52-a847-a1cee8c471bd",
+    "items": [
+      {
+        "product_id": "prod-002",
+        "product_name": "Arrachera Premium",
+        "quantity": 1,
+        "price": 259,
+        "subtotal": 259
+      }
+    ],
+    "total": 259,
+    "status": "confirmado",
+    "notes": "",
+    "customer_phone": "",
+    "customer_name": "Administrador",
+    "created_by": "brunolh.ti24@ustjr.edu.mx",
+    "created_date": "2026-05-11T16:57:18.666Z",
+    "updated_date": "2026-05-11T16:57:18.667Z"
+  }
+]
