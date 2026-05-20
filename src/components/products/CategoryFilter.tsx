@@ -1,22 +1,25 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Beef, Fish, Bird, Flame, Layers, Drumstick } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
-const categories = [
-  { value: 'all', label: 'Todos', icon: Layers },
-  { value: 'CERDO', label: 'Cerdo', icon: Beef },
-  { value: 'RES', label: 'Res', icon: Beef },
-  { value: 'BORREGO', label: 'Borrego', icon: Beef },
-  { value: 'POLLO', label: 'Pollo', icon: Bird },
-  { value: 'MARISCOS', label: 'Mariscos', icon: Fish },
-  { value: 'PAPAS', label: 'Papas & Snacks', icon: Flame },
-  { value: 'VARIOS', label: 'Varios', icon: Layers },
+const categoryKeys = [
+  { value: 'all', key: 'cat.all', icon: Layers },
+  { value: 'CERDO', key: 'cat.CERDO', icon: Beef },
+  { value: 'RES', key: 'cat.RES', icon: Beef },
+  { value: 'BORREGO', key: 'cat.BORREGO', icon: Beef },
+  { value: 'POLLO', key: 'cat.POLLO', icon: Bird },
+  { value: 'MARISCOS', key: 'cat.MARISCOS', icon: Fish },
+  { value: 'PAPAS', key: 'cat.PAPAS', icon: Flame },
+  { value: 'VARIOS', key: 'cat.VARIOS', icon: Layers },
 ];
 
 export default function CategoryFilter({ selected, onChange }) {
+  const { t } = useLanguage();
+
   return (
     <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-      {categories.map(cat => {
+      {categoryKeys.map(cat => {
         const Icon = cat.icon;
         const isActive = selected === cat.value;
         return (
@@ -30,7 +33,7 @@ export default function CategoryFilter({ selected, onChange }) {
             }`}
           >
             <Icon className="w-3.5 h-3.5 mr-1.5" />
-            {cat.label}
+            {t(cat.key)}
           </Button>
         );
       })}

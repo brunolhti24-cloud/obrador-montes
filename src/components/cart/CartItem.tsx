@@ -4,13 +4,19 @@ import { Minus, Plus, Trash2 } from 'lucide-react';
 import { useCart } from '@/context/CartContext';
 
 export default function CartItem({ item }) {
-  const { updateQuantity, removeItem } = useCart();
+  const { updateQuantity, removeItem, isWholesaleEligible } = useCart();
+  const price = isWholesaleEligible ? item.wholesale_price : item.base_price;
 
   return (
     <div className="flex items-center gap-4 py-4 border-b border-border/50 last:border-0">
       <div className="flex-1 min-w-0">
         <h4 className="font-heading font-semibold text-sm truncate">{item.product_name}</h4>
-        <p className="text-xs text-muted-foreground mt-0.5">${item.price?.toFixed(0)} /kg</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          ${price?.toFixed(0)} /kg
+          {isWholesaleEligible && item.wholesale_price < item.base_price && (
+            <span className="ml-2 text-amber-600 font-bold">(Mayoreo 40 kilos)</span>
+          )}
+        </p>
       </div>
 
       <div className="flex items-center gap-1.5">
@@ -18,7 +24,7 @@ export default function CartItem({ item }) {
           variant="outline"
           size="icon"
           className="h-7 w-7"
-          onClick={() => updateQuantity(item.product_id, item.quantity - 1)}
+          onClick={() => updateQuantity(item.product_id, item.quantity - 0.5)}
         >
           <Minus className="w-3 h-3" />
         </Button>
@@ -27,14 +33,14 @@ export default function CartItem({ item }) {
           variant="outline"
           size="icon"
           className="h-7 w-7"
-          onClick={() => updateQuantity(item.product_id, item.quantity + 1)}
+          onClick={() => updateQuantity(item.product_id, item.quantity + 0.5)}
         >
           <Plus className="w-3 h-3" />
         </Button>
       </div>
 
       <div className="text-right min-w-[60px]">
-        <p className="font-bold text-sm">${(item.price * item.quantity).toFixed(0)}</p>
+        <p className="font-bold text-sm">${(price * item.quantity).toFixed(0)}</p>
       </div>
 
       <Button

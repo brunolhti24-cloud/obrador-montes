@@ -6,22 +6,24 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
-import { ClipboardList, Search, RefreshCw, Clock, User, Phone, StickyNote, Mail, AlertCircle, Trash2 } from 'lucide-react';
+import { ClipboardList, Search, RefreshCw, Clock, User, Phone, StickyNote, Mail, AlertCircle, Trash2, Download } from 'lucide-react';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { generateOrderTicket } from '@/lib/pdfGenerator';
 
 const statusConfig = {
-  pendiente:      { label: 'Pendiente de Pago', color: 'bg-amber-500/10 text-amber-400 border-amber-500/20' },
-  confirmado:     { label: 'Pago Confirmado',   color: 'bg-blue-500/10 text-blue-400 border-blue-500/20' },
-  en_preparacion: { label: 'En Preparación',    color: 'bg-orange-500/10 text-orange-400 border-orange-500/20' },
-  listo:          { label: 'Listo para Recoger', color: 'bg-green-500/10 text-green-400 border-green-500/20' },
-  entregado:      { label: 'Entregado',          color: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' },
-  cancelado:      { label: 'Cancelado',          color: 'bg-red-500/10 text-red-400 border-red-500/20' },
+  pendiente:      { label: 'Pendiente de Pago', color: 'bg-amber-50 text-amber-600 border-amber-200', dot: 'bg-amber-400' },
+  confirmado:     { label: 'Pago Confirmado',   color: 'bg-blue-50 text-blue-600 border-blue-200', dot: 'bg-blue-500' },
+  pagado:         { label: 'Pago Confirmado',   color: 'bg-blue-50 text-blue-600 border-blue-200', dot: 'bg-blue-500' },
+  en_preparacion: { label: 'En Preparación',    color: 'bg-orange-50 text-orange-600 border-orange-200', dot: 'bg-orange-400' },
+  listo:          { label: 'Listo para Recoger', color: 'bg-green-50 text-green-600 border-green-200', dot: 'bg-green-500' },
+  entregado:      { label: 'Entregado',          color: 'bg-emerald-50 text-emerald-600 border-emerald-200', dot: 'bg-emerald-500' },
+  cancelado:      { label: 'Cancelado',          color: 'bg-red-50 text-red-600 border-red-200', dot: 'bg-red-500' },
 };
 
-const allStatuses = Object.keys(statusConfig);
+const allStatuses = ['pendiente', 'confirmado', 'en_preparacion', 'listo', 'entregado', 'cancelado'];
 
 export default function AdminOrders() {
   const [search, setSearch] = useState('');
@@ -51,7 +53,7 @@ export default function AdminOrders() {
   });
 
   const filtered = orders.filter(o => {
-    const matchStatus = filterStatus === 'all' || o.status === filterStatus;
+    const matchStatus = filterStatus === 'all' || o.status === filterStatus || (filterStatus === 'confirmado' && o.status === 'pagado');
     const matchSearch =
       !search ||
       o.id?.toLowerCase().includes(search.toLowerCase()) ||
@@ -65,16 +67,16 @@ export default function AdminOrders() {
       {/* Header */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg"
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg shadow-slate-200"
             style={{ background: 'linear-gradient(135deg, #FCF6BA, #B38728)' }}>
             <ClipboardList className="w-6 h-6 text-black" />
           </div>
           <div>
-            <h1 className="font-heading text-3xl font-bold text-foreground">Pedidos</h1>
-            <p className="text-xs text-muted-foreground font-body uppercase tracking-widest mt-1">{orders.length} órdenes en total</p>
+            <h1 className="font-heading text-3xl font-bold text-slate-900">Pedidos</h1>
+            <p className="text-xs text-slate-400 font-body uppercase tracking-widest mt-1">{orders.length} órdenes en total</p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={() => refetch()} className="font-body gap-2 bg-black/50 border-white/10 hover:bg-white/5 hover:text-white transition-colors">
+        <Button variant="outline" size="sm" onClick={() => refetch()} className="font-body gap-2 bg-white border-slate-200 text-slate-600 hover:bg-slate-50 transition-colors">
           <RefreshCw className="w-3.5 h-3.5" />
           Actualizar
         </Button>
@@ -83,19 +85,19 @@ export default function AdminOrders() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[180px]">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
           <Input
             placeholder="Buscar por ID, nombre o teléfono..."
             value={search}
             onChange={e => setSearch(e.target.value)}
-            className="pl-9 font-body h-12 bg-black/50 border-white/10 focus-visible:ring-accent rounded-xl text-foreground"
+            className="pl-9 font-body h-12 bg-white border-slate-200 focus-visible:ring-primary rounded-xl text-slate-900"
           />
         </div>
         <Select value={filterStatus} onValueChange={setFilterStatus}>
-          <SelectTrigger className="w-48 font-body h-12 bg-black/50 border-white/10 focus:ring-accent rounded-xl text-foreground">
+          <SelectTrigger className="w-48 font-body h-12 bg-white border-slate-200 focus:ring-primary rounded-xl text-slate-900">
             <SelectValue placeholder="Filtrar por estado" />
           </SelectTrigger>
-          <SelectContent className="bg-background border-white/10 text-foreground">
+          <SelectContent className="bg-white border-slate-200 text-slate-900">
             <SelectItem value="all">Todos los estados</SelectItem>
             {allStatuses.map(s => (
               <SelectItem key={s} value={s}>{statusConfig[s].label}</SelectItem>
@@ -107,18 +109,19 @@ export default function AdminOrders() {
       {/* Stats row */}
       <div className="grid grid-cols-3 sm:grid-cols-6 gap-3">
         {allStatuses.map(s => {
-          const count = orders.filter(o => o.status === s).length;
+          const count = orders.filter(o => o.status === s || (s === 'confirmado' && o.status === 'pagado')).length;
+          const cfg = statusConfig[s];
           return (
             <button
               key={s}
               onClick={() => setFilterStatus(filterStatus === s ? 'all' : s)}
-              className={`rounded-xl border p-4 text-center transition-all duration-300 hover:shadow-lg ${
-                filterStatus === s ? statusConfig[s].color + ' shadow-[0_0_15px_rgba(255,255,255,0.05)] scale-105' : 'glass-panel border-white/5 hover:border-white/20'
+              className={`rounded-xl border p-4 text-center transition-all duration-300 hover:shadow-md ${
+                filterStatus === s ? cfg.color + ' shadow-lg scale-105' : 'bg-white border-slate-100 hover:border-slate-300'
               }`}
             >
               <p className="text-2xl font-bold font-heading">{count}</p>
-              <p className="text-[9px] font-body text-muted-foreground uppercase tracking-widest mt-1 opacity-80">
-                {statusConfig[s].label.split(' ')[0]}
+              <p className="text-[9px] font-body text-slate-400 uppercase tracking-widest mt-1 opacity-80">
+                {cfg.label.split(' ')[0]}
               </p>
             </button>
           );
@@ -128,12 +131,12 @@ export default function AdminOrders() {
       {/* Orders list */}
       {isLoading ? (
         <div className="space-y-4">
-          {Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl bg-white/5" />)}
+          {Array(5).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-2xl bg-slate-100" />)}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-20 text-muted-foreground font-body uppercase tracking-widest text-sm">No hay pedidos registrados</div>
+        <div className="text-center py-20 text-slate-400 font-body uppercase tracking-widest text-sm">No hay pedidos registrados</div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-5">
           {filtered.map((order, idx) => {
             const cfg = statusConfig[order.status] || statusConfig.pendiente;
             return (
@@ -142,79 +145,92 @@ export default function AdminOrders() {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: idx * 0.03 }}
-                className="glass-panel rounded-2xl border border-white/5 overflow-hidden shadow-lg hover:border-white/20 transition-all duration-300"
+                className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-sm hover:shadow-md transition-all duration-300"
               >
                 {/* Top bar */}
-                <div className="px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-white/5 bg-white/5">
+                <div className={`px-6 py-4 flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 ${cfg.color.split(' ')[0]}`}>
                   <div className="flex items-center gap-4 flex-wrap">
-                    <span className="font-heading font-bold text-base text-foreground">
+                    <span className="font-heading font-bold text-base text-slate-900">
                       #{order.id?.slice(-6).toUpperCase()}
                     </span>
                     <span className={`text-[10px] uppercase tracking-widest font-bold px-3 py-1 rounded-full border ${cfg.color}`}>
                       {cfg.label}
                     </span>
-                    <span className="text-[11px] text-muted-foreground font-body flex items-center gap-1.5 uppercase tracking-widest">
+                    <span className="text-[11px] text-slate-500 font-body flex items-center gap-1.5 uppercase tracking-widest">
                       <Clock className="w-3.5 h-3.5" />
                       {order.created_date && format(new Date(order.created_date), "d MMM, HH:mm", { locale: es })}
                     </span>
                   </div>
-                  <span className="font-heading font-bold text-2xl text-accent">
-                    ${order.total?.toFixed(0)} <span className="text-xs font-body font-normal text-muted-foreground uppercase tracking-widest ml-1">MXN</span>
-                  </span>
+                  <div className="flex items-center gap-3">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => generateOrderTicket(order)}
+                      className="h-9 text-[10px] font-bold gap-2 bg-white border-slate-200 text-slate-700 hover:bg-slate-50 shadow-sm"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Ticket PDF
+                    </Button>
+                    <span className="font-heading font-bold text-2xl text-slate-900">
+                      ${order.total?.toFixed(0)} <span className="text-xs font-body font-normal text-slate-400 uppercase tracking-widest ml-1">MXN</span>
+                    </span>
+                  </div>
                 </div>
 
                 {/* Body */}
-                <div className="px-6 py-5 flex flex-wrap gap-8 items-start">
+                <div className="px-6 py-6 flex flex-wrap gap-8 items-start">
                   {/* Items */}
-                  <div className="flex-1 min-w-[200px]">
-                    <h4 className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Artículos</h4>
-                    <div className="space-y-2">
+                  <div className="flex-1 min-w-[240px]">
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 mb-3 font-bold">Artículos</h4>
+                    <div className="space-y-2.5">
                       {order.items?.map((item, i) => (
-                        <div key={i} className="flex justify-between text-sm font-body text-foreground">
-                          <span><span className="font-bold text-accent mr-2">{item.quantity}x</span> {item.product_name}</span>
-                          <span className="font-medium">${item.subtotal?.toFixed(0)}</span>
+                        <div key={i} className="flex justify-between text-sm font-body text-slate-700">
+                          <span><span className="font-bold text-primary mr-2">{item.quantity}x</span> {item.product_name}</span>
+                          <span className="font-bold text-slate-900">${item.subtotal?.toFixed(0)}</span>
                         </div>
                       ))}
                     </div>
                   </div>
 
                   {/* Customer info */}
-                  <div className="text-xs font-body space-y-2 text-muted-foreground min-w-[180px]">
-                    <h4 className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Cliente</h4>
+                  <div className="text-xs font-body space-y-2.5 text-slate-500 min-w-[220px]">
+                    <h4 className="text-[10px] uppercase tracking-widest text-slate-400 mb-3 font-bold">Cliente</h4>
                     {order.created_by && (
-                      <p className="flex items-center gap-2 text-foreground"><Mail className="w-3.5 h-3.5 text-accent/50" /> {order.created_by}</p>
+                      <p className="flex items-center gap-2 text-slate-700"><Mail className="w-3.5 h-3.5 text-slate-400" /> {order.created_by}</p>
                     )}
                     {order.customer_name && (
-                      <p className="flex items-center gap-2 text-foreground"><User className="w-3.5 h-3.5 text-accent/50" /> {order.customer_name}</p>
+                      <p className="flex items-center gap-2 text-slate-700"><User className="w-3.5 h-3.5 text-slate-400" /> {order.customer_name}</p>
                     )}
                     {order.customer_phone && (
-                      <p className="flex items-center gap-2 text-foreground"><Phone className="w-3.5 h-3.5 text-accent/50" /> {order.customer_phone}</p>
+                      <p className="flex items-center gap-2 text-slate-700"><Phone className="w-3.5 h-3.5 text-slate-400" /> {order.customer_phone}</p>
                     )}
                     {order.notes && (
-                      <p className="flex items-start gap-2 text-foreground mt-2 bg-white/5 p-2 rounded-lg border border-white/5"><StickyNote className="w-3.5 h-3.5 mt-0.5 shrink-0 text-accent/50" /> {order.notes}</p>
+                      <div className="mt-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
+                         <p className="flex items-start gap-2 text-slate-600"><StickyNote className="w-3.5 h-3.5 mt-0.5 shrink-0 text-slate-400" /> {order.notes}</p>
+                      </div>
                     )}
                     {order.status === 'cancelado' && order.payment_method !== 'efectivo' && (
-                      <div className="mt-2 p-2 rounded-lg bg-red-500/10 border border-red-500/20 flex gap-2 items-start">
-                        <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
-                        <p className="text-red-400 text-[10px] leading-tight">
-                          Reembolso Manual Requerido: Si el cliente ya había pagado este pedido por tarjeta, ingresa a tu panel de OpenPay para emitir el reembolso manualmente.
+                      <div className="mt-2 p-3 rounded-xl bg-red-50 border border-red-100 flex gap-2 items-start">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                        <p className="text-red-700 text-[10px] leading-tight font-medium">
+                          Reembolso Manual Requerido: Si el cliente ya pagó por tarjeta, ingresa a OpenPay.
                         </p>
                       </div>
                     )}
                   </div>
 
                   {/* Status control */}
-                  <div className="min-w-[200px]">
-                    <p className="text-[10px] uppercase tracking-widest text-muted-foreground mb-3 font-semibold">Acciones</p>
+                  <div className="min-w-[220px]">
+                    <p className="text-[10px] uppercase tracking-widest text-slate-400 mb-3 font-bold">Cambiar Estado</p>
                     <Select
-                      value={order.status}
+                      value={order.status === 'pagado' ? 'confirmado' : order.status}
                       onValueChange={val => updateMutation.mutate({ id: order.id, status: val })}
                       disabled={updateMutation.isPending}
                     >
-                      <SelectTrigger className="h-10 text-xs font-body w-full bg-black/50 border-white/10 text-foreground rounded-lg">
+                      <SelectTrigger className="h-11 text-xs font-body w-full bg-slate-50 border-slate-200 text-slate-900 rounded-xl focus:ring-primary shadow-sm">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent className="bg-background border-white/10 text-foreground">
+                      <SelectContent className="bg-white border-slate-200 text-slate-900 shadow-xl">
                         {allStatuses.map(s => (
                           <SelectItem key={s} value={s} className="text-xs">
                             {statusConfig[s].label}
@@ -228,7 +244,7 @@ export default function AdminOrders() {
                       <Button
                         variant="destructive"
                         size="sm"
-                        className="mt-3 w-full text-xs gap-2"
+                        className="mt-3 w-full text-xs gap-2 font-bold shadow-sm"
                         onClick={() => {
                           if (confirm('¿Eliminar este pedido cancelado permanentemente?')) {
                             deleteMutation.mutate(order.id);
@@ -237,7 +253,7 @@ export default function AdminOrders() {
                         disabled={deleteMutation.isPending}
                       >
                         <Trash2 className="w-3.5 h-3.5" />
-                        Eliminar Pedido
+                        Eliminar Registro
                       </Button>
                     )}
                   </div>

@@ -17,56 +17,56 @@ export default function DynamicBackground() {
 
   return (
     <div className="fixed inset-0 z-0 pointer-events-none overflow-hidden">
-      {/* Rich base - deep burgundy gradient, NOT black */}
+      {/* Rich base - Warm cream/white gradient */}
       <div
         className="absolute inset-0"
         style={{
           background: `
             linear-gradient(
               160deg,
-              hsl(355, 35%, 12%) 0%,
-              hsl(0, 25%, 9%) 30%,
-              hsl(20, 20%, 10%) 50%,
-              hsl(355, 30%, 11%) 70%,
-              hsl(340, 25%, 8%) 100%
+              hsl(40, 30%, 98%) 0%,
+              hsl(40, 25%, 96%) 30%,
+              hsl(40, 20%, 94%) 50%,
+              hsl(40, 25%, 96%) 70%,
+              hsl(40, 30%, 98%) 100%
             )
           `,
         }}
       />
 
-      {/* Animated large red glow - top left */}
+      {/* Animated soft red/burgundy glow - top left */}
       <div
         className="absolute w-[120vw] h-[120vh] -top-[30%] -left-[30%] animate-smoke-slow"
         style={{
-          background: 'radial-gradient(ellipse 60% 50% at 30% 40%, rgba(150,20,20,0.45) 0%, transparent 65%)',
+          background: 'radial-gradient(ellipse 60% 50% at 30% 40%, rgba(150,20,20,0.05) 0%, transparent 65%)',
           filter: 'blur(60px)',
         }}
       />
 
-      {/* Animated gold shimmer - right side */}
+      {/* Animated soft gold shimmer - right side */}
       <div
         className="absolute w-[120vw] h-[120vh] animate-smoke-slower"
         style={{
-          background: 'radial-gradient(ellipse 50% 45% at 85% 60%, rgba(191,149,63,0.3) 0%, transparent 60%)',
+          background: 'radial-gradient(ellipse 50% 45% at 85% 60%, rgba(191,149,63,0.08) 0%, transparent 60%)',
           filter: 'blur(70px)',
         }}
       />
 
-      {/* Animated deep purple/blue accent - bottom */}
+      {/* Animated soft blush accent - bottom */}
       <div
         className="absolute w-[120vw] h-[120vh] animate-smoke-slow"
         style={{
-          background: 'radial-gradient(ellipse 60% 40% at 40% 95%, rgba(80,10,30,0.5) 0%, transparent 55%)',
+          background: 'radial-gradient(ellipse 60% 40% at 40% 95%, rgba(183,28,28,0.04) 0%, transparent 55%)',
           filter: 'blur(80px)',
           animationDelay: '-10s',
         }}
       />
 
-      {/* Warm ember center glow */}
+      {/* Light center glow */}
       <div
         className="absolute w-[100vw] h-[100vh] animate-smoke-slower"
         style={{
-          background: 'radial-gradient(ellipse 40% 35% at 55% 50%, rgba(180,60,10,0.2) 0%, transparent 55%)',
+          background: 'radial-gradient(ellipse 40% 35% at 55% 50%, rgba(252,246,186,0.15) 0%, transparent 55%)',
           filter: 'blur(60px)',
           animationDelay: '-5s',
         }}

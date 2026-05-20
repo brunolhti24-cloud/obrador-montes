@@ -1,15 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { authenticateToken } from './middleware/auth.js';
-import productsRouter from './routes/products.js';
-import ordersRouter from './routes/orders.js';
-import favoritesRouter from './routes/favorites.js';
-import reviewsRouter from './routes/reviews.js';
-import notificationsRouter from './routes/notifications.js';
-import authRouter from './routes/auth.js';
-import checkoutRouter from './routes/checkout.js';
 
-// Load .env manually for the server (simple approach)
+// 1. Load .env FIRST before any other imports
 import { readFileSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
@@ -17,7 +9,6 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 
-// Load .env from project root
 try {
   const envPath = join(__dirname, '..', '.env');
   const envContent = readFileSync(envPath, 'utf-8');
@@ -34,9 +25,31 @@ try {
       }
     }
   });
+  console.log('✅ [server] .env cargado correctamente');
 } catch {
-  console.warn('[server] No .env file found, using defaults');
+  console.warn('⚠️ [server] No .env file found');
 }
+
+// 2. Now import everything else
+import { authenticateToken } from './middleware/auth.js';
+import productsRouter from './routes/products.js';
+import ordersRouter from './routes/orders.js';
+import favoritesRouter from './routes/favorites.js';
+import reviewsRouter from './routes/reviews.js';
+import notificationsRouter from './routes/notifications.js';
+import authRouter from './routes/auth.js';
+import checkoutRouter from './routes/checkout.js';
+import wholesaleRouter from './routes/wholesale.js';
+import usersRouter from './routes/users.js';
+
+// Global crash prevention
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (err) => {
+  console.error('❌ Uncaught Exception:', err);
+});
 
 const app = express();
 const PORT = process.env.SERVER_PORT || 3001;
@@ -54,6 +67,8 @@ app.use('/api/reviews', reviewsRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/auth', authRouter);
 app.use('/api/checkout', checkoutRouter);
+app.use('/api/wholesale', wholesaleRouter);
+app.use('/api/users', usersRouter);
 
 // Health check
 app.get('/api/health', (req, res) => {
@@ -61,7 +76,7 @@ app.get('/api/health', (req, res) => {
 });
 
 const server = app.listen(PORT, () => {
-  console.log(`\n🥩 Servidor Obrador Montes corriendo en http://localhost:${PORT}`);
+  console.log(`\n🥩 Servidor Montega corriendo en http://localhost:${PORT}`);
   console.log(`   Admin: ${process.env.ADMIN_EMAIL || '(no configurado)'}`);
   console.log(`   OpenPay: ${process.env.OPENPAY_MERCHANT_ID ? 'Configurado' : 'No configurado (pedidos directos)'}\n`);
 });

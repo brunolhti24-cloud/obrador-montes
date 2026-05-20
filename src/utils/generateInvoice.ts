@@ -11,7 +11,7 @@ export function generateInvoice(order: any, user: any) {
     doc.setTextColor(191, 149, 63);
     doc.setFontSize(22);
     doc.setFont('helvetica', 'bold');
-    doc.text('OBRADOR MONTES', 105, 20, { align: 'center' });
+    doc.text('MONTEGA', 105, 20, { align: 'center' });
 
     doc.setTextColor(200, 200, 200);
     doc.setFontSize(12);
@@ -108,7 +108,7 @@ export function generateInvoice(order: any, user: any) {
     doc.setFontSize(9);
     doc.setFont('helvetica', 'normal');
     doc.text('Gracias por su preferencia.', 105, pageHeight - 12, { align: 'center' });
-    doc.text('Obrador Montes - La Excelencia en Carnes', 105, pageHeight - 7, { align: 'center' });
+    doc.text('Montega - La Excelencia en Carnes', 105, pageHeight - 7, { align: 'center' });
 
     // Descargar PDF - método forzado
     const filename = `Factura_OM_${orderId}.pdf`;

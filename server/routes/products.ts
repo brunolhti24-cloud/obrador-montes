@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { db } from '../db.js';
-import { requireAdmin } from '../middleware/auth.js';
+import { requireStaff } from '../middleware/auth.js';
 
 const router = Router();
 
@@ -31,7 +31,7 @@ router.get('/:id', async (req, res) => {
 });
 
 // POST /api/products - Create product (admin only)
-router.post('/', requireAdmin, async (req, res) => {
+router.post('/', requireStaff, async (req, res) => {
   try {
     const product = await db.create('products', req.body, req.user.email);
     res.status(201).json(product);
@@ -41,7 +41,7 @@ router.post('/', requireAdmin, async (req, res) => {
 });
 
 // PUT /api/products/:id - Update product (admin only)
-router.put('/:id', requireAdmin, async (req, res) => {
+router.put('/:id', requireStaff, async (req, res) => {
   try {
     const product = await db.update('products', req.params.id, req.body);
     if (!product) return res.status(404).json({ message: 'Producto no encontrado' });
@@ -52,7 +52,7 @@ router.put('/:id', requireAdmin, async (req, res) => {
 });
 
 // DELETE /api/products/:id - Delete product (admin only)
-router.delete('/:id', requireAdmin, async (req, res) => {
+router.delete('/:id', requireStaff, async (req, res) => {
   try {
     const deleted = await db.delete('products', req.params.id);
     if (!deleted) return res.status(404).json({ message: 'Producto no encontrado' });

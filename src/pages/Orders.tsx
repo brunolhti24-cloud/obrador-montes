@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ClipboardList, Clock, CheckCircle2, Truck, ChefHat, CreditCard, AlertCircle, Package, XCircle, Download } from 'lucide-react';
 import { format } from 'date-fns';
-import { es } from 'date-fns/locale';
+import { es, enUS } from 'date-fns/locale';
 import { motion } from 'framer-motion';
 import { toast } from 'sonner';
 import { generateInvoice } from '../utils/generateInvoice';
+import { useLanguage } from '@/lib/LanguageContext';
 
 const statusConfig = {
   pendiente: {
-    label: 'Pendiente de Pago',
     icon: CreditCard,
     color: 'text-amber-600',
     bg: 'bg-amber-50',
@@ -22,7 +22,6 @@ const statusConfig = {
     pulse: true,
   },
   confirmado: {
-    label: 'Pago Confirmado',
     icon: CheckCircle2,
     color: 'text-blue-600',
     bg: 'bg-blue-50',
@@ -32,7 +31,6 @@ const statusConfig = {
     pulse: false,
   },
   pagado: {
-    label: 'Pago Confirmado',
     icon: CheckCircle2,
     color: 'text-blue-600',
     bg: 'bg-blue-50',
@@ -42,7 +40,6 @@ const statusConfig = {
     pulse: false,
   },
   en_preparacion: {
-    label: 'En Preparación',
     icon: ChefHat,
     color: 'text-orange-600',
     bg: 'bg-orange-50',
@@ -52,7 +49,6 @@ const statusConfig = {
     pulse: true,
   },
   listo: {
-    label: 'Listo para Recoger',
     icon: Package,
     color: 'text-green-600',
     bg: 'bg-green-50',
@@ -62,7 +58,6 @@ const statusConfig = {
     pulse: false,
   },
   entregado: {
-    label: 'Entregado ✓',
     icon: Truck,
     color: 'text-emerald-600',
     bg: 'bg-emerald-50',
@@ -72,7 +67,6 @@ const statusConfig = {
     pulse: false,
   },
   cancelado: {
-    label: 'Cancelado',
     icon: XCircle,
     color: 'text-red-500',
     bg: 'bg-red-50',
@@ -85,14 +79,14 @@ const statusConfig = {
 
 const steps = ['pendiente', 'confirmado', 'en_preparacion', 'listo', 'entregado'];
 
-function OrderTimeline({ status }) {
+function OrderTimeline({ status, t }) {
   if (status === 'cancelado') return null;
   const current = steps.indexOf(status === 'pagado' ? 'confirmado' : status);
   return (
     <div className="flex items-center gap-1 mt-4">
       {steps.map((step, i) => {
-        const cfg = statusConfig[step];
         const done = i <= current;
+        const localizedLabel = t(`orders.status.${step}`);
         return (
           <React.Fragment key={step}>
             <div className={`flex flex-col items-center gap-1`}>
@@ -104,7 +98,7 @@ function OrderTimeline({ status }) {
               <span className={`text-[9px] font-body hidden sm:block text-center leading-tight w-14 ${
                 done ? 'text-primary font-semibold' : 'text-gray-400'
               }`}>
-                {cfg.label.split(' ')[0]}
+                {localizedLabel.split(' ')[0]}
               </span>
             </div>
             {i < steps.length - 1 && (
@@ -122,6 +116,8 @@ function OrderTimeline({ status }) {
 export default function Orders() {
   const queryClient = useQueryClient();
   const [confirmingId, setConfirmingId] = useState(null);
+  const { t, language } = useLanguage();
+  const dateLocale = language === 'es' ? es : enUS;
 
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['my-orders'],
@@ -138,10 +134,10 @@ export default function Orders() {
       console.log('ORDER DATA:', JSON.stringify(order, null, 2));
       console.log('USER DATA:', JSON.stringify(user, null, 2));
       generateInvoice(order, user);
-      toast.success('Factura descargada con éxito');
+      toast.success(t('orders.downloadSuccess'));
     } catch (err) {
       console.error('INVOICE ERROR:', err);
-      toast.error('Error al generar la factura: ' + (err as any)?.message);
+      toast.error(t('orders.downloadError') + (err as any)?.message);
     }
   };
 
@@ -150,7 +146,7 @@ export default function Orders() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['my-orders'] });
       setConfirmingId(null);
-      toast.success('Pedido cancelado');
+      toast.success(t('orders.cancelSuccess'));
     },
   });
 
@@ -170,8 +166,8 @@ export default function Orders() {
           style={{ background: 'linear-gradient(135deg, #7f0000 0%, #1a237e 100%)' }}>
           <ClipboardList className="w-10 h-10 text-white" />
         </div>
-        <h2 className="font-heading text-2xl font-bold">Sin pedidos aún</h2>
-        <p className="text-muted-foreground text-sm font-body">Tus pedidos aparecerán aquí una vez que compres</p>
+        <h2 className="font-heading text-2xl font-bold">{t('orders.noOrders')}</h2>
+        <p className="text-muted-foreground text-sm font-body">{t('orders.noOrdersDesc')}</p>
       </div>
     );
   }
@@ -184,8 +180,10 @@ export default function Orders() {
           <ClipboardList className="w-5 h-5 text-white" />
         </div>
         <div>
-          <h1 className="font-heading text-2xl font-bold">Mis Pedidos</h1>
-          <p className="text-muted-foreground text-xs font-body">{orders.length} pedido{orders.length !== 1 ? 's' : ''} en total</p>
+          <h1 className="font-heading text-2xl font-bold">{t('orders.title')}</h1>
+          <p className="text-muted-foreground text-xs font-body">
+            {orders.length} {orders.length === 1 ? t('orders.countSuffix') : t('orders.countSuffixPlural')}
+          </p>
         </div>
       </div>
 
@@ -212,11 +210,11 @@ export default function Orders() {
                   </div>
                   <div>
                     <p className="font-heading font-bold text-sm">
-                      Pedido #{order.id?.slice(-6).toUpperCase()}
+                      {t('orders.orderNumber')} #{order.id?.slice(-6).toUpperCase()}
                     </p>
                     <p className="text-xs text-muted-foreground font-body flex items-center gap-1">
                       <Clock className="w-3 h-3" />
-                      {order.created_date && format(new Date(order.created_date), "d 'de' MMM, yyyy · HH:mm", { locale: es })}
+                      {order.created_date && format(new Date(order.created_date), language === 'es' ? "d 'de' MMM, yyyy · HH:mm" : "MMM d, yyyy · hh:mm a", { locale: dateLocale })}
                     </p>
                   </div>
                 </div>
@@ -229,7 +227,7 @@ export default function Orders() {
                         <span className={`relative inline-flex rounded-full h-2 w-2 ${cfg.dot}`} />
                       </span>
                     )}
-                    {cfg.label}
+                    {t(`orders.status.${status}`)}
                   </span>
                 </div>
               </div>
@@ -249,7 +247,7 @@ export default function Orders() {
 
                 {/* Total */}
                 <div className="flex justify-between items-center pt-3 border-t border-border/60">
-                  <span className="text-sm font-body font-medium text-muted-foreground">Total del pedido</span>
+                  <span className="text-sm font-body font-medium text-muted-foreground">{t('orders.totalOrder')}</span>
                   <span className="text-xl font-heading font-bold" style={{ color: '#b71c1c' }}>
                     ${order.total?.toFixed(0)} <span className="text-sm font-body font-normal text-muted-foreground">MXN</span>
                   </span>
@@ -260,7 +258,7 @@ export default function Orders() {
                   <div className="mt-3 flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-2.5">
                     <AlertCircle className="w-4 h-4 text-amber-500 shrink-0" />
                     <p className="text-xs font-body text-amber-700">
-                      <strong>Pago pendiente.</strong> Presenta tu pedido en caja para completar la compra.
+                      <strong>{t('orders.paymentPending')}</strong> {t('orders.paymentPendingDesc')}
                     </p>
                   </div>
                 )}
@@ -271,10 +269,10 @@ export default function Orders() {
                     {confirmingId === order.id ? (
                       <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
                         <div className="flex flex-col gap-2 flex-1">
-                          <p className="text-xs font-body text-red-700">¿Seguro que deseas cancelar este pedido?</p>
+                          <p className="text-xs font-body text-red-700">{t('orders.cancelConfirm')}</p>
                           {isConfirmed && (
                             <p className="text-[10px] text-red-600 bg-red-100 p-1.5 rounded border border-red-200">
-                              ⚠️ Como tu pedido ya fue pagado, el reembolso será procesado manualmente y puede tardar de 3 a 5 días hábiles en reflejarse en tu cuenta.
+                              {t('orders.refundWarning')}
                             </p>
                           )}
                         </div>
@@ -285,7 +283,7 @@ export default function Orders() {
                           onClick={() => cancelMutation.mutate(order.id)}
                           disabled={cancelMutation.isPending}
                         >
-                          Sí, cancelar
+                          {t('orders.cancelYes')}
                         </Button>
                         <Button
                           size="sm"
@@ -293,7 +291,7 @@ export default function Orders() {
                           className="h-7 text-xs"
                           onClick={() => setConfirmingId(null)}
                         >
-                          No
+                          {t('orders.cancelNo')}
                         </Button>
                       </div>
                     ) : (
@@ -301,7 +299,7 @@ export default function Orders() {
                         onClick={() => setConfirmingId(order.id)}
                         className="text-xs text-red-500 hover:text-red-700 font-body underline underline-offset-2 transition-colors"
                       >
-                        Cancelar pedido
+                        {t('orders.cancelOrder')}
                       </button>
                     )}
                   </div>
@@ -312,16 +310,16 @@ export default function Orders() {
                   <div className="mt-4 flex justify-end">
                     <button
                       onClick={() => handleDownloadInvoice(order)}
-                      className="flex items-center gap-2 bg-[#1a1a1a] hover:bg-[#2a2a2a] text-[#BF953F] border border-[#BF953F]/30 px-4 py-2 rounded-lg transition-all duration-300 text-xs font-semibold"
+                      className="flex items-center gap-2 bg-primary/5 hover:bg-primary/10 text-primary border border-primary/20 px-4 py-2.5 rounded-xl transition-all duration-300 text-xs font-bold"
                     >
                       <Download className="w-4 h-4" />
-                      Descargar Factura
+                      {t('orders.downloadReceipt')}
                     </button>
                   </div>
                 )}
 
                 {/* Timeline */}
-                <OrderTimeline status={status} />
+                <OrderTimeline status={status} t={t} />
               </div>
             </motion.div>
           );

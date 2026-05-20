@@ -47,6 +47,11 @@ function createEntity(name) {
       return apiCall(`${endpoint}${buildQuery({ sort, limit })}`);
     },
 
+    // get(id) - matches base44.entities.X.get(id)
+    get(id) {
+      return apiCall(`${endpoint}/${id}`);
+    },
+
     // filter(query, sort, limit) - matches base44.entities.X.filter({ field: value }, '-created_date', 50)
     filter(query = {}, sort, limit) {
       return apiCall(`${endpoint}${buildQuery({ ...query, sort, limit })}`);
@@ -138,6 +143,30 @@ export const base44 = {
       }
     },
 
+    // resendVerification(email) - resends code
+    resendVerification(email) {
+      return apiCall(`${API_BASE}/auth/resend-verification`, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+    },
+
+    // forgotPassword(email) - requests reset code
+    forgotPassword(email) {
+      return apiCall(`${API_BASE}/auth/forgot-password`, {
+        method: 'POST',
+        body: JSON.stringify({ email }),
+      });
+    },
+
+    // resetPassword(email, code, newPassword) - resets password
+    resetPassword(email, code, newPassword) {
+      return apiCall(`${API_BASE}/auth/reset-password`, {
+        method: 'POST',
+        body: JSON.stringify({ email, code, newPassword }),
+      });
+    },
+
     // redirectToLogin(returnUrl) - redirects to login page
     redirectToLogin(returnUrl) {
       if (returnUrl) {
@@ -145,6 +174,13 @@ export const base44 = {
       }
       window.location.href = '/login';
     },
+  },
+
+  api: {
+    get(url) { return apiCall(`${API_BASE}${url}`); },
+    post(url, data) { return apiCall(`${API_BASE}${url}`, { method: 'POST', body: JSON.stringify(data) }); },
+    put(url, data) { return apiCall(`${API_BASE}${url}`, { method: 'PUT', body: JSON.stringify(data) }); },
+    delete(url) { return apiCall(`${API_BASE}${url}`, { method: 'DELETE' }); },
   },
 
   functions: {

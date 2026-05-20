@@ -34,6 +34,13 @@ export function requireAdmin(req, res, next) {
   next();
 }
 
+export function requireStaff(req, res, next) {
+  if (!req.user || (req.user.role !== 'admin' && req.user.role !== 'staff')) {
+    return res.status(403).json({ message: 'Acceso restringido para personal' });
+  }
+  next();
+}
+
 export function generateToken(user) {
   return jwt.sign(
     { email: user.email, role: user.role, name: user.name },

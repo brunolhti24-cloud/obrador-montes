@@ -7,10 +7,12 @@ import { Skeleton } from '@/components/ui/skeleton';
 import CategoryFilter from '@/components/products/CategoryFilter';
 import ProductCard from '@/components/products/ProductCard';
 import { motion } from 'framer-motion';
+import { useLanguage } from '@/lib/LanguageContext';
 
 export default function Catalog() {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all');
+  const { t } = useLanguage();
 
   const { data: products = [], isLoading } = useQuery({
     queryKey: ['products'],
@@ -31,7 +33,7 @@ export default function Catalog() {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
         className="relative rounded-2xl overflow-hidden"
-        style={{ background: 'linear-gradient(135deg, #7f0000 0%, #b71c1c 50%, #1a237e 100%)' }}
+        style={{ background: 'linear-gradient(135deg, #8b0000 0%, #b71c1c 50%, #BF953F 100%)' }}
       >
         {/* Decorative circles */}
         <div className="absolute -top-10 -right-10 w-48 h-48 rounded-full bg-white/5" />
@@ -43,14 +45,14 @@ export default function Catalog() {
             <div className="flex items-center gap-2 mb-2">
               <Sparkles className="w-4 h-4 text-yellow-400" />
               <span className="text-yellow-300 text-xs font-body font-semibold tracking-wider uppercase">
-                Productos Frescos del Día
+                {t('catalog.hero.bannerTitle')}
               </span>
             </div>
             <h1 className="font-heading text-3xl md:text-4xl font-bold text-white mb-2 drop-shadow-lg">
-              Carnicería Obrador Montes
+              {t('catalog.hero.title')}
             </h1>
             <p className="text-white/75 font-body text-sm md:text-base max-w-md">
-              La mejor selección de carnes, mariscos y más. Calidad garantizada para tu mesa.
+              {t('catalog.hero.desc')}
             </p>
           </div>
 
@@ -58,7 +60,7 @@ export default function Catalog() {
             <div className="flex items-center gap-1.5 bg-white/15 backdrop-blur-sm rounded-xl px-4 py-2">
               <TrendingUp className="w-4 h-4 text-yellow-300" />
               <span className="text-white font-body text-sm font-semibold">
-                +{products.length} productos
+                +{products.length} {t('catalog.hero.countSuffix')}
               </span>
             </div>
             <div className="flex gap-1">
@@ -79,7 +81,7 @@ export default function Catalog() {
       <div className="relative">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
         <Input
-          placeholder="Buscar productos..."
+          placeholder={t('catalog.searchPlaceholder')}
           value={search}
           onChange={e => setSearch(e.target.value)}
           className="pl-10 h-12 font-body bg-card shadow-sm border-border/60 focus:border-primary rounded-xl text-sm"
@@ -92,7 +94,7 @@ export default function Catalog() {
       {/* Count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground font-body">
-          <span className="font-semibold text-foreground">{filtered.length}</span> producto{filtered.length !== 1 ? 's' : ''} encontrados
+          <span className="font-semibold text-foreground">{filtered.length}</span> {filtered.length === 1 ? t('catalog.foundSingular') : t('catalog.foundPlural')}
         </p>
       </div>
 
@@ -110,7 +112,7 @@ export default function Catalog() {
         </div>
       ) : filtered.length === 0 ? (
         <div className="text-center py-16">
-          <p className="text-muted-foreground font-body">No se encontraron productos</p>
+          <p className="text-muted-foreground font-body">{t('catalog.noProducts')}</p>
         </div>
       ) : (
         <motion.div

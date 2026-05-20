@@ -1,18 +1,40 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { base44 } from '@/api/base44Client';
 import { useQuery } from '@tanstack/react-query';
 import { Skeleton } from '@/components/ui/skeleton';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { TrendingUp, ShoppingBag, DollarSign, Clock, CheckCircle2, XCircle } from 'lucide-react';
-import { format, subDays, startOfDay } from 'date-fns';
+import { 
+  AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, 
+  PieChart, Pie, Cell, BarChart, Bar 
+} from 'recharts';
+import { 
+  TrendingUp, ShoppingBag, DollarSign, Clock, 
+  CheckCircle2, XCircle, Filter, Calendar, 
+  Users as UsersIcon, ArrowUpRight, ArrowDownRight 
+} from 'lucide-react';
+import { format, subDays, startOfDay, isWithinInterval } from 'date-fns';
 import { es } from 'date-fns/locale';
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { motion, AnimatePresence } from 'framer-motion';
+import { useAuth } from '@/lib/AuthContext';
 
 export default function AdminDashboard() {
+  const { user } = useAuth();
+  const [dateRange, setDateRange] = useState(7); // Default 7 days
+
+  if (user && user.role === 'staff') {
+    return <Navigate to="/admin/pedidos" replace />;
+  }
+
   const { data: orders = [], isLoading } = useQuery({
     queryKey: ['admin-orders'],
-    queryFn: () => base44.entities.Order.list('-created_date', 500),
+    queryFn: () => base44.entities.Order.list('-created_date', 1000),
+    refetchInterval: 10000, // Update every 10 seconds
+  });
+
+  const { data: users = [] } = useQuery({
+    queryKey: ['admin-users'],
+    queryFn: () => base44.api.get('/users').then(res => res),
   });
 
   const { data: products = [] } = useQuery({
@@ -20,19 +42,32 @@ export default function AdminDashboard() {
     queryFn: () => base44.entities.Product.list(),
   });
 
-  // Stats
-  const totalRevenue = orders
+  // Filter orders by range
+  const filteredOrders = orders.filter(o => {
+    const date = new Date(o.created_date);
+    return date >= subDays(new Date(), dateRange);
+  });
+
+  // Stats calculation
+  const totalRevenue = filteredOrders
     .filter(o => o.status !== 'cancelado')
     .reduce((sum, o) => sum + (o.total || 0), 0);
 
-  const pending = orders.filter(o => o.status === 'pendiente').length;
-  const inPrep = orders.filter(o => o.status === 'en_preparacion').length;
-  const cancelled = orders.filter(o => o.status === 'cancelado').length;
-  const delivered = orders.filter(o => o.status === 'entregado').length;
+  const prevRevenue = orders
+    .filter(o => {
+      const date = new Date(o.created_date);
+      return isWithinInterval(date, { 
+        start: subDays(new Date(), dateRange * 2), 
+        end: subDays(new Date(), dateRange) 
+      }) && o.status !== 'cancelado';
+    })
+    .reduce((sum, o) => sum + (o.total || 0), 0);
 
-  // Last 7 days chart
-  const last7 = Array.from({ length: 7 }, (_, i) => {
-    const day = subDays(new Date(), 6 - i);
+  const growth = prevRevenue > 0 ? ((totalRevenue - prevRevenue) / prevRevenue) * 100 : 0;
+
+  // Chart Data (Last X days)
+  const chartData = Array.from({ length: dateRange }, (_, i) => {
+    const day = subDays(new Date(), (dateRange - 1) - i);
     const start = startOfDay(day).getTime();
     const end = start + 86400000;
     const dayOrders = orders.filter(o => {
@@ -40,163 +75,253 @@ export default function AdminDashboard() {
       return t >= start && t < end && o.status !== 'cancelado';
     });
     return {
-      day: format(day, 'EEE', { locale: es }),
+      date: format(day, 'dd MMM', { locale: es }),
       ventas: dayOrders.reduce((s, o) => s + (o.total || 0), 0),
       pedidos: dayOrders.length,
     };
   });
 
-  // Top products
-  const productCounts = {};
-  orders.forEach(o => {
-    if (o.status === 'cancelado') return;
-    o.items?.forEach(item => {
-      productCounts[item.product_name] = (productCounts[item.product_name] || 0) + (item.quantity || 1);
-    });
-  });
-  const topProducts = Object.entries(productCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5);
+  // Status Distribution
+  const statusCounts = [
+    { name: 'Entregados', value: filteredOrders.filter(o => o.status === 'entregado').length, color: '#16a34a' },
+    { name: 'Pendientes', value: filteredOrders.filter(o => o.status === 'pendiente' || o.status === 'confirmado' || o.status === 'pagado').length, color: '#d97706' },
+    { name: 'Proceso', value: filteredOrders.filter(o => o.status === 'en_preparacion' || o.status === 'listo').length, color: '#ea580c' },
+    { name: 'Cancelados', value: filteredOrders.filter(o => o.status === 'cancelado').length, color: '#dc2626' },
+  ].filter(s => s.value > 0);
 
-  const stats = [
-    { label: 'Ingresos totales', value: `$${totalRevenue.toLocaleString('es-MX', { maximumFractionDigits: 0 })}`, sub: 'MXN', icon: DollarSign, color: '#b71c1c' },
-    { label: 'Total pedidos', value: orders.length, sub: 'pedidos', icon: ShoppingBag, color: '#1a237e' },
-    { label: 'Pendientes', value: pending, sub: 'sin pagar', icon: Clock, color: '#d97706' },
-    { label: 'En preparación', value: inPrep, sub: 'en proceso', icon: CheckCircle2, color: '#ea580c' },
-    { label: 'Entregados', value: delivered, sub: 'completados', icon: CheckCircle2, color: '#16a34a' },
-    { label: 'Cancelados', value: cancelled, sub: 'cancelados', icon: XCircle, color: '#dc2626' },
+  // Top Customers
+  const customerSpending: Record<string, number> = {};
+  filteredOrders.forEach(o => {
+    if (o.status === 'cancelado') return;
+    const name = o.customer_name || o.created_by || 'Anonimo';
+    customerSpending[name] = (customerSpending[name] || 0) + (o.total || 0);
+  });
+  const topCustomers = Object.entries(customerSpending)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4);
+
+  const statsCards = [
+    { label: 'Ingresos', value: `$${totalRevenue.toLocaleString()}`, trend: growth, icon: DollarSign, color: 'text-emerald-600', bg: 'bg-emerald-50' },
+    { label: 'Pedidos', value: filteredOrders.length, trend: null, icon: ShoppingBag, color: 'text-blue-600', bg: 'bg-blue-50' },
+    { label: 'Clientes', value: users.length, trend: null, icon: UsersIcon, color: 'text-amber-600', bg: 'bg-amber-50' },
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-8 pb-10">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="font-heading text-3xl font-bold">Dashboard Admin</h1>
-          <p className="text-xs text-muted-foreground font-body uppercase tracking-widest mt-1">Resumen Ejecutivo</p>
+          <h1 className="font-heading text-4xl font-bold text-slate-900 tracking-tight">Análisis de Negocio</h1>
+          <p className="text-sm text-slate-500 font-body mt-1">Monitorea el rendimiento de Montega en tiempo real.</p>
         </div>
-        <Link to="/admin/pedidos">
-          <Button size="sm" className="font-body font-bold text-black" style={{ background: 'linear-gradient(135deg, #FCF6BA, #B38728)' }}>
-            Administrar Pedidos
-          </Button>
-        </Link>
+        
+        <div className="flex items-center gap-2 bg-white p-1 rounded-2xl border border-slate-200 shadow-sm w-fit">
+          {[1, 7, 30].map(days => (
+            <button
+              key={days}
+              onClick={() => setDateRange(days)}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${
+                dateRange === days 
+                  ? 'bg-slate-900 text-white shadow-lg' 
+                  : 'text-slate-500 hover:bg-slate-50'
+              }`}
+            >
+              {days === 1 ? 'Hoy' : `${days} Días`}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* Stats */}
-      {isLoading ? (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-28 rounded-2xl bg-white/5" />)}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          {stats.map((s, i) => {
-            const Icon = s.icon;
-            return (
-              <div key={i} className="glass-panel rounded-2xl border border-white/5 p-5 shadow-lg hover:border-white/20 transition-all duration-300">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <p className="text-[10px] text-muted-foreground font-body uppercase tracking-wider">{s.label}</p>
-                    <p className="text-3xl font-bold font-heading mt-2" style={{ color: s.color === '#b71c1c' ? '#FCF6BA' : s.color === '#1a237e' ? '#B38728' : s.color }}>{s.value}</p>
-                    <p className="text-[10px] text-muted-foreground font-body mt-1 uppercase tracking-widest">{s.sub}</p>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {isLoading ? (
+          Array(3).fill(0).map((_, i) => <Skeleton key={i} className="h-32 rounded-3xl bg-slate-100" />)
+        ) : (
+          statsCards.map((s, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.1 }}
+              className="bg-white rounded-3xl border border-slate-100 p-6 shadow-xl shadow-slate-100/50 flex items-center justify-between group hover:border-primary/20 transition-all"
+            >
+              <div className="space-y-2">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-[0.2em]">{s.label}</p>
+                <h3 className="text-3xl font-bold font-heading text-slate-900">{s.value}</h3>
+                {s.trend !== null && (
+                  <div className={`flex items-center gap-1 text-[10px] font-bold ${s.trend >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                    {s.trend >= 0 ? <ArrowUpRight className="w-3 h-3" /> : <ArrowDownRight className="w-3 h-3" />}
+                    {Math.abs(s.trend).toFixed(1)}% vs anterior
                   </div>
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center border" style={{ background: s.color === '#b71c1c' ? 'rgba(252, 246, 186, 0.1)' : s.color === '#1a237e' ? 'rgba(179, 135, 40, 0.1)' : s.color + '18', borderColor: s.color === '#b71c1c' ? 'rgba(252, 246, 186, 0.2)' : s.color === '#1a237e' ? 'rgba(179, 135, 40, 0.2)' : s.color + '30' }}>
-                    <Icon className="w-5 h-5" style={{ color: s.color === '#b71c1c' ? '#FCF6BA' : s.color === '#1a237e' ? '#B38728' : s.color }} />
-                  </div>
-                </div>
+                )}
               </div>
-            );
-          })}
-        </div>
-      )}
+              <div className={`w-14 h-14 rounded-2xl ${s.bg} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <s.icon className={`w-7 h-7 ${s.color}`} />
+              </div>
+            </motion.div>
+          ))
+        )}
+      </div>
 
-      {/* Chart + Top products */}
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Sales chart */}
-        <div className="glass-panel rounded-2xl border border-white/5 p-6 shadow-lg">
-          <h2 className="font-heading font-semibold text-lg mb-6 flex items-center gold-gradient-text">
-            <TrendingUp className="w-4 h-4 mr-2" />
-            Ventas 7 Días (MXN)
-          </h2>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={last7} barSize={32}>
-              <XAxis dataKey="day" tick={{ fill: '#888', fontSize: 11, fontFamily: 'var(--font-body)' }} axisLine={false} tickLine={false} />
-              <YAxis tick={{ fill: '#888', fontSize: 10 }} axisLine={false} tickLine={false} />
-              <Tooltip
-                cursor={{ fill: 'rgba(255,255,255,0.05)' }}
-                formatter={(v) => [`$${v.toLocaleString('es-MX')}`, 'Ventas']}
-                contentStyle={{ borderRadius: 12, fontSize: 12, fontFamily: 'var(--font-body)', backgroundColor: 'rgba(0,0,0,0.8)', border: '1px solid rgba(255,255,255,0.1)', color: '#fff' }}
-              />
-              <Bar dataKey="ventas" radius={[6, 6, 0, 0]}>
-                {last7.map((_, i) => (
-                  <Cell key={i} fill={i === last7.length - 1 ? '#FCF6BA' : '#B38728'} opacity={i === last7.length - 1 ? 1 : 0.6} />
-                ))}
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        {/* Top products */}
-        <div className="glass-panel rounded-2xl border border-white/5 p-6 shadow-lg">
-          <h2 className="font-heading font-semibold text-lg mb-6 text-foreground">Top Cortes</h2>
-          {topProducts.length === 0 ? (
-            <p className="text-sm text-muted-foreground font-body text-center py-8">Sin información disponible</p>
-          ) : (
-            <div className="space-y-5">
-              {topProducts.map(([name, qty], i) => {
-                const max = topProducts[0][1];
-                return (
-                  <div key={name}>
-                    <div className="flex justify-between text-xs font-body mb-2 uppercase tracking-wide">
-                      <span className="font-semibold truncate max-w-[180px] text-foreground">{name}</span>
-                      <span className="text-accent">{qty} kg</span>
-                    </div>
-                    <div className="h-2.5 rounded-full bg-white/5 overflow-hidden border border-white/5">
-                      <div
-                        className="h-full rounded-full transition-all"
-                        style={{
-                          width: `${(qty / max) * 100}%`,
-                          background: i === 0 ? 'linear-gradient(90deg, #B38728, #FCF6BA)' : 'rgba(252, 246, 186, 0.4)',
-                        }}
-                      />
-                    </div>
-                  </div>
-                );
-              })}
+      {/* Charts Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Sales Chart */}
+        <div className="lg:col-span-2 bg-white rounded-3xl border border-slate-100 p-8 shadow-xl shadow-slate-100/50">
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="font-heading font-bold text-xl text-slate-900">Rendimiento de Ventas</h2>
+            <div className="flex items-center gap-2 text-xs text-slate-400">
+              <span className="w-3 h-3 rounded-full bg-primary/20" />
+              Ingresos diarios
             </div>
-          )}
+          </div>
+          <div className="h-[300px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#b71c1c" stopOpacity={0.1}/>
+                    <stop offset="95%" stopColor="#b71c1c" stopOpacity={0}/>
+                  </linearGradient>
+                </defs>
+                <XAxis 
+                  dataKey="date" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: '600' }}
+                  dy={10}
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#94a3b8', fontSize: 10, fontWeight: '600' }}
+                />
+                <Tooltip 
+                  contentStyle={{ borderRadius: '20px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', fontFamily: 'var(--font-body)' }}
+                />
+                <Area 
+                  type="monotone" 
+                  dataKey="ventas" 
+                  stroke="#b71c1c" 
+                  strokeWidth={3}
+                  fillOpacity={1} 
+                  fill="url(#colorSales)" 
+                />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Status Distribution */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-xl shadow-slate-100/50 flex flex-col items-center">
+          <h2 className="font-heading font-bold text-xl text-slate-900 mb-6 self-start">Estados de Pedido</h2>
+          <div className="h-[240px] w-full relative">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={statusCounts}
+                  innerRadius={60}
+                  outerRadius={80}
+                  paddingAngle={5}
+                  dataKey="value"
+                >
+                  {statusCounts.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+              </PieChart>
+            </ResponsiveContainer>
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-bold font-heading">{filteredOrders.length}</span>
+              <span className="text-[10px] text-slate-400 font-bold uppercase">Total</span>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4 mt-4 w-full">
+            {statusCounts.map((s, i) => (
+              <div key={i} className="flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full" style={{ backgroundColor: s.color }} />
+                <span className="text-[10px] font-bold text-slate-500 uppercase">{s.name}</span>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
-      {/* Recent orders */}
-      <div className="glass-panel rounded-2xl border border-white/5 p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="font-heading font-semibold text-lg text-foreground">Órdenes Recientes</h2>
-          <Link to="/admin/pedidos" className="text-[10px] uppercase tracking-widest text-accent font-body hover:text-white transition-colors">Historial Completo →</Link>
-        </div>
-        <div className="space-y-1">
-          {orders.slice(0, 5).map(order => {
-            const cfg = {
-              pendiente: 'bg-amber-500/10 text-amber-400 border-amber-500/20',
-              confirmado: 'bg-blue-500/10 text-blue-400 border-blue-500/20',
-              en_preparacion: 'bg-orange-500/10 text-orange-400 border-orange-500/20',
-              listo: 'bg-green-500/10 text-green-400 border-green-500/20',
-              entregado: 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20',
-              cancelado: 'bg-red-500/10 text-red-400 border-red-500/20',
-            }[order.status] || 'bg-white/5 text-white/50 border-white/10';
-            return (
-              <div key={order.id} className="flex items-center justify-between text-sm py-3 border-b border-white/5 last:border-0 hover:bg-white/5 px-2 -mx-2 rounded-lg transition-colors">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Top Customers */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-xl shadow-slate-100/50">
+          <h2 className="font-heading font-bold text-xl text-slate-900 mb-6">Top Clientes (Mayoristas)</h2>
+          <div className="space-y-6">
+            {topCustomers.map(([name, amount], i) => (
+              <div key={i} className="flex items-center justify-between group">
                 <div className="flex items-center gap-4">
-                  <span className="font-heading font-bold text-sm text-foreground">#{order.id?.slice(-6).toUpperCase()}</span>
-                  <span className={`text-[9px] uppercase tracking-widest px-2.5 py-1 rounded-full font-bold border ${cfg}`}>
-                    {order.status}
-                  </span>
+                  <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center font-bold text-slate-500 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    {String(name).charAt(0)}
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-900">{name}</p>
+                    <p className="text-[10px] text-slate-400 uppercase font-bold tracking-widest">Cliente Frecuente</p>
+                  </div>
                 </div>
-                <div className="flex items-center gap-4 text-xs font-body text-muted-foreground">
-                  <span className="uppercase tracking-widest">{order.created_date && format(new Date(order.created_date), "dd MMM", { locale: es })}</span>
-                  <span className="font-bold font-heading text-base text-accent">${order.total?.toFixed(0)}</span>
+                <div className="text-right">
+                  <p className="text-sm font-bold text-slate-900">${Number(amount).toLocaleString()}</p>
+                  <p className="text-[10px] text-emerald-600 font-bold">Total Invertido</p>
                 </div>
               </div>
-            );
-          })}
+            ))}
+            {topCustomers.length === 0 && <p className="text-center text-slate-400 py-10 font-body">Sin datos de clientes</p>}
+          </div>
+        </div>
+
+        {/* Inventory Alerts */}
+        <div className="bg-white rounded-3xl border border-slate-100 p-8 shadow-xl shadow-slate-100/50">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="font-heading font-bold text-xl text-slate-900">Alertas de Inventario</h2>
+            <Link to="/admin/productos" className="text-[10px] uppercase tracking-widest text-primary font-bold hover:underline">Surtir Todo →</Link>
+          </div>
+          <div className="space-y-4">
+             {(() => {
+               const lowStock = (products as any[]).filter(p => (p.stock || 0) <= (p.min_stock || 10));
+               if (lowStock.length === 0) return <p className="text-center text-slate-400 py-10 font-body text-xs">Inventario saludable ✓</p>;
+               return lowStock.slice(0, 4).map(p => (
+                 <div key={p.id} className="flex items-center justify-between p-3 rounded-2xl bg-red-50/50 border border-red-100/50">
+                   <div className="flex items-center gap-3">
+                     <div className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                     <span className="text-sm font-bold text-slate-900">{p.name}</span>
+                   </div>
+                   <div className="text-right">
+                     <span className="text-xs font-bold text-red-600">{p.stock || 0}kg restantes</span>
+                   </div>
+                 </div>
+               ));
+             })()}
+          </div>
+        </div>
+
+        {/* Quick Actions / Alerts */}
+        <div className="bg-slate-900 rounded-3xl p-8 text-white relative overflow-hidden shadow-2xl md:col-span-2 lg:col-span-1">
+          <div className="relative z-10 space-y-6">
+            <h2 className="font-heading font-bold text-xl">Resumen Operativo</h2>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+                <p className="text-[10px] text-white/50 uppercase font-bold mb-1">Por Atender</p>
+                <p className="text-2xl font-bold font-heading">
+                  {orders.filter(o => o.status === 'pendiente' || o.status === 'confirmado' || o.status === 'pagado').length}
+                </p>
+              </div>
+              <div className="bg-white/10 backdrop-blur-md p-4 rounded-2xl border border-white/10">
+                <p className="text-[10px] text-white/50 uppercase font-bold mb-1">En Cocina</p>
+                <p className="text-2xl font-bold font-heading">{orders.filter(o => o.status === 'en_preparacion').length}</p>
+              </div>
+            </div>
+            <Link to="/admin/pedidos">
+              <Button className="w-full bg-white text-slate-900 hover:bg-slate-200 font-bold rounded-2xl h-12 mt-4">
+                Gestionar Pedidos Pendientes
+              </Button>
+            </Link>
+          </div>
+          {/* Decorative element */}
+          <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl" />
         </div>
       </div>
     </div>

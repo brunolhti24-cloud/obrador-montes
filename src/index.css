@@ -9,51 +9,45 @@
     --font-heading: 'Playfair Display', serif;
     --font-body: 'Inter', sans-serif;
 
-    /* Premium Wine & Gold Theme */
-    --background: 0 20% 7%; /* Deep burgundy-black */
-    --foreground: 40 20% 92%; /* Warm cream white */
+    /* Premium Light & Gold Theme */
+    --background: 40 30% 98%; /* Warm cream white */
+    --foreground: 0 10% 12%; /* Dark charcoal with a hint of red */
     
-    --card: 0 15% 10%; /* Wine-tinted dark card */
-    --card-foreground: 40 20% 92%;
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 0 10% 12%;
     
-    --popover: 0 15% 10%;
-    --popover-foreground: 40 20% 92%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 10% 12%;
     
-    --primary: 355 78% 30%; /* Deep Burgundy / Crimson */
+    --primary: 355 78% 30%; /* Deep Burgundy stays as primary accent */
     --primary-foreground: 0 0% 100%;
     
-    --secondary: 0 12% 14%; /* Warm dark secondary */
-    --secondary-foreground: 40 20% 92%;
+    --secondary: 40 20% 92%; /* Light beige secondary */
+    --secondary-foreground: 0 10% 12%;
     
-    --muted: 0 10% 14%;
-    --muted-foreground: 35 8% 55%;
+    --muted: 40 10% 94%;
+    --muted-foreground: 0 5% 40%;
     
-    --accent: 43 74% 49%; /* Premium Gold */
-    --accent-foreground: 0 0% 10%; /* Dark text on gold */
+    --accent: 43 74% 49%; /* Premium Gold stays */
+    --accent-foreground: 0 0% 10%;
     
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
     
-    --border: 0 10% 18%;
-    --input: 0 10% 18%;
-    --ring: 43 74% 49%; /* Gold ring for focus */
+    --border: 0 0% 88%;
+    --input: 0 0% 88%;
+    --ring: 355 78% 30%;
     
-    --chart-1: 355 78% 30%;
-    --chart-2: 43 74% 49%;
-    --chart-3: 120 30% 40%;
-    --chart-4: 200 50% 45%;
-    --chart-5: 280 40% 50%;
+    --radius: 0.75rem;
     
-    --radius: 0.5rem;
-    
-    --sidebar-background: 0 18% 8%;
-    --sidebar-foreground: 40 20% 92%;
-    --sidebar-primary: 43 74% 49%;
-    --sidebar-primary-foreground: 0 0% 10%;
-    --sidebar-accent: 0 12% 14%;
-    --sidebar-accent-foreground: 40 20% 92%;
-    --sidebar-border: 0 10% 18%;
-    --sidebar-ring: 43 74% 49%;
+    --sidebar-background: 40 30% 98%;
+    --sidebar-foreground: 0 10% 12%;
+    --sidebar-primary: 355 78% 30%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 40 20% 92%;
+    --sidebar-accent-foreground: 0 10% 12%;
+    --sidebar-border: 0 0% 88%;
+    --sidebar-ring: 355 78% 30%;
   }
 }
 
@@ -70,7 +64,7 @@
 /* Custom Utilities for Premium Vibe */
 @layer utilities {
   .glass-panel {
-    @apply bg-card/70 backdrop-blur-md border border-white/5 shadow-xl;
+    @apply bg-white/60 backdrop-blur-md border border-black/5 shadow-lg;
   }
   .gold-gradient-text {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-[#BF953F] via-[#FCF6BA] to-[#B38728];

@@ -38,7 +38,7 @@ const docClient = DynamoDBDocumentClient.from(client, {
 });
 
 const PREFIX = 'montega_';
-const TABLES = ['products', 'orders', 'favorites', 'reviews', 'notifications', 'users'];
+const TABLES = ['products', 'orders', 'favorites', 'reviews', 'notifications', 'users', 'wholesale_inquiries'];
 
 async function tableExists(name) {
   try {
@@ -53,9 +53,12 @@ async function tableExists(name) {
 async function createTable(name) {
   const fullName = `${PREFIX}${name}`;
 
-  if (await tableExists(fullName)) {
-    console.log(`  ✅ Tabla ${fullName} ya existe`);
+  try {
+    const desc = await client.send(new DescribeTableCommand({ TableName: fullName }));
+    console.log(`  ✅ Tabla ${fullName} ya existe (Account: ${desc.Table.TableArn.split(':')[4]})`);
     return;
+  } catch (e) {
+    if (e.name !== 'ResourceNotFoundException') throw e;
   }
 
   console.log(`  🔨 Creando tabla ${fullName}...`);
@@ -125,7 +128,7 @@ async function seedData(collection, dataFile) {
 }
 
 async function main() {
-  console.log('\n🚀 Configurando DynamoDB para Obrador Montes\n');
+  console.log('\n🚀 Configurando DynamoDB para Montega\n');
   console.log('Región:', process.env.AWS_REGION || 'us-east-1');
   console.log('');
 

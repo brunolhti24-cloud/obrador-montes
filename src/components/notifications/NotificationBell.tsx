@@ -37,10 +37,10 @@ export default function NotificationBell() {
   return (
     <Popover>
       <PopoverTrigger asChild>
-        <button className="relative p-2 rounded-lg text-white/80 hover:text-white hover:bg-white/15 transition-all">
-          <Bell className="w-5 h-5" />
+        <button className="relative p-2 rounded-lg text-foreground/70 hover:text-primary hover:bg-secondary transition-all">
+          <Bell className="w-5 h-5 stroke-[2.5]" />
           {unread.length > 0 && (
-            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-red-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+            <span className="absolute -top-0.5 -right-0.5 w-4 h-4 bg-primary text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">
               {unread.length > 9 ? '9+' : unread.length}
             </span>
           )}

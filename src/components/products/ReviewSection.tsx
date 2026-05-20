@@ -6,6 +6,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Star } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/lib/AuthContext';
+import { useLanguage } from '@/lib/LanguageContext';
 
 function StarRating({ value, onChange, readonly = false }) {
   const [hovered, setHovered] = useState(0);
@@ -34,6 +35,7 @@ function StarRating({ value, onChange, readonly = false }) {
 
 export default function ReviewSection({ productId }) {
   const { user, isAuthenticated } = useAuth();
+  const { t } = useLanguage();
   const queryClient = useQueryClient();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
@@ -53,14 +55,14 @@ export default function ReviewSection({ productId }) {
       product_id: productId,
       rating,
       comment,
-      reviewer_name: user?.full_name || 'Cliente',
+      reviewer_name: user?.full_name || t('review.defaultName'),
     }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reviews', productId] });
       setRating(0);
       setComment('');
       setShowForm(false);
-      toast.success('¡Gracias por tu reseña!');
+      toast.success(t('review.thanks'));
     },
   });
 
@@ -71,14 +73,14 @@ export default function ReviewSection({ productId }) {
         <div className="flex items-center gap-2">
           <StarRating value={Math.round(avgRating || 0)} readonly />
           {avgRating ? (
-            <span className="text-sm font-semibold">{avgRating} <span className="text-muted-foreground font-normal">({reviews.length} reseña{reviews.length !== 1 ? 's' : ''})</span></span>
+            <span className="text-sm font-semibold">{avgRating} <span className="text-muted-foreground font-normal">({reviews.length} {reviews.length !== 1 ? t('review.reviewPlural') : t('review.reviewSingular')})</span></span>
           ) : (
-            <span className="text-sm text-muted-foreground">Sin reseñas aún</span>
+            <span className="text-sm text-muted-foreground">{t('review.noReviews')}</span>
           )}
         </div>
         {isAuthenticated && !showForm && (
           <Button size="sm" variant="outline" onClick={() => setShowForm(true)} className="text-xs">
-            Opinar
+            {t('review.opinionBtn')}
           </Button>
         )}
       </div>
@@ -88,7 +90,7 @@ export default function ReviewSection({ productId }) {
         <div className="bg-muted/50 rounded-xl p-4 space-y-3">
           <StarRating value={rating} onChange={setRating} />
           <Textarea
-            placeholder="Escribe tu opinión..."
+            placeholder={t('review.placeholder')}
             value={comment}
             onChange={e => setComment(e.target.value)}
             rows={2}
@@ -96,9 +98,9 @@ export default function ReviewSection({ productId }) {
           />
           <div className="flex gap-2">
             <Button size="sm" onClick={() => mutation.mutate()} disabled={rating === 0 || mutation.isPending}>
-              Publicar
+              {t('review.publish')}
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Cancelar</Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>{t('review.cancel')}</Button>
           </div>
         </div>
       )}
@@ -109,7 +111,7 @@ export default function ReviewSection({ productId }) {
           {reviews.map(r => (
             <div key={r.id} className="bg-card border border-border rounded-lg p-3">
               <div className="flex items-center justify-between mb-1">
-                <span className="text-xs font-semibold">{r.reviewer_name || 'Cliente'}</span>
+                <span className="text-xs font-semibold">{r.reviewer_name || t('review.defaultName')}</span>
                 <StarRating value={r.rating} readonly />
               </div>
               {r.comment && <p className="text-xs text-muted-foreground">{r.comment}</p>}

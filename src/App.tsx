@@ -16,9 +16,16 @@ import AdminLayout from '@/components/layout/AdminLayout';
 import AdminDashboard from '@/pages/admin/Dashboard';
 import AdminOrders from '@/pages/admin/Orders';
 import AdminProducts from '@/pages/admin/Products';
+import AdminUsers from '@/pages/admin/Users';
+import WholesaleInquiries from '@/pages/admin/WholesaleInquiries';
 import ProductDetail from '@/pages/ProductDetail';
 import OrderSuccess from '@/pages/OrderSuccess';
 import Login from '@/pages/Login';
+import Invoices from '@/pages/Invoices';
+import PrivacyPolicy from '@/pages/legal/PrivacyPolicy';
+import Terms from '@/pages/legal/Terms';
+import Refunds from '@/pages/legal/Refunds';
+import Wholesale from '@/pages/Wholesale';
 
 const AuthenticatedApp = () => {
   const { isLoadingAuth, isAuthenticated } = useAuth();
@@ -27,7 +34,7 @@ const AuthenticatedApp = () => {
   if (isLoadingAuth) {
     return (
       <div className="fixed inset-0 flex items-center justify-center"
-        style={{ background: 'linear-gradient(135deg, #4a0000 0%, #7f0000 30%, #b71c1c 60%, #1a237e 100%)' }}>
+        style={{ background: 'linear-gradient(135deg, #fdfbf7 0%, #fff 50%, #fdfbf7 100%)' }}>
         <div className="flex flex-col items-center gap-4">
           <img
             src="https://media.base44.com/images/public/69fa176f04a4100a804d3357/f2ccd0164_image.png"
@@ -60,13 +67,20 @@ const AuthenticatedApp = () => {
           <Route path="/carrito" element={<Cart />} />
           <Route path="/pedidos" element={<Orders />} />
           <Route path="/favoritos" element={<Favorites />} />
+          <Route path="/facturas" element={<Invoices />} />
           <Route path="/producto/:id" element={<ProductDetail />} />
           <Route path="/pedidos/exito" element={<OrderSuccess />} />
+          <Route path="/privacidad" element={<PrivacyPolicy />} />
+          <Route path="/terminos" element={<Terms />} />
+          <Route path="/reembolsos" element={<Refunds />} />
+          <Route path="/mayoreo" element={<Wholesale />} />
         </Route>
         <Route element={<AdminLayout />}>
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/admin/pedidos" element={<AdminOrders />} />
           <Route path="/admin/productos" element={<AdminProducts />} />
+          <Route path="/admin/usuarios" element={<AdminUsers />} />
+          <Route path="/admin/solicitudes" element={<WholesaleInquiries />} />
         </Route>
         <Route path="*" element={<PageNotFound />} />
       </Routes>
@@ -74,17 +88,21 @@ const AuthenticatedApp = () => {
   );
 };
 
+import { LanguageProvider } from '@/lib/LanguageContext';
+
 function App() {
   return (
-    <AuthProvider>
-      <QueryClientProvider client={queryClientInstance}>
-        <Router>
-          <AuthenticatedApp />
-        </Router>
-        <ShadcnToaster />
-        <SonnerToaster position="bottom-right" richColors />
-      </QueryClientProvider>
-    </AuthProvider>
+    <LanguageProvider>
+      <AuthProvider>
+        <QueryClientProvider client={queryClientInstance}>
+          <Router>
+            <AuthenticatedApp />
+          </Router>
+          <ShadcnToaster />
+          <SonnerToaster position="bottom-right" richColors />
+        </QueryClientProvider>
+      </AuthProvider>
+    </LanguageProvider>
   )
 }
 
